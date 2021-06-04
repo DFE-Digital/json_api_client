@@ -8,6 +8,10 @@ class Property < TestResource
   has_one :owner
 end
 
+class AnotherProperty < TestResource
+  has_one :owner
+end
+
 class Specified < TestResource
   belongs_to :foo, class_name: "Property"
   has_many :bars, class_name: "Owner"
@@ -15,6 +19,11 @@ end
 
 class Shallowed < TestResource
   belongs_to :foo, class_name: "Property", shallow_path: true
+end
+
+class MultipleShallowed < TestResource
+  belongs_to :foo, class_name: "Property", shallow_path: true
+  belongs_to :bar, class_name: "AnotherProperty", shallow_path: true
 end
 
 class PrefixedOwner < TestResource
@@ -696,6 +705,19 @@ class AssociationTest < MiniTest::Test
     assert_equal("foos/%{foo_id}/shalloweds", Shallowed.path)
     assert_equal("foos/1/shalloweds", Shallowed.path({foo_id: 1}))
     assert_equal("foos/%D0%99%D0%A6%D0%A3%D0%9A%D0%95%D0%9D/shalloweds", Shallowed.path({foo_id: 'ЙЦУКЕН'}))
+  end
+
+  def test_belongs_multiple_shallowed_path
+    assert_equal([:foo_id, :bar_id], MultipleShallowed.prefix_params)
+    assert_equal "multiple_shalloweds", MultipleShallowed.path({})
+    assert_equal("foos/%{foo_id}/bars/%{bar_id}/multiple_shalloweds", MultipleShallowed.path)
+    assert_equal("foos/1/bars/2/multiple_shalloweds", MultipleShallowed.path({foo_id: 1, bar_id: 2}))
+  end
+
+  def test_belongs_multiple_shallowed_path_omitted
+    assert_equal([:foo_id, :bar_id], MultipleShallowed.prefix_params)
+    assert_equal "multiple_shalloweds", MultipleShallowed.path({})
+    assert_equal("foos/2/multiple_shalloweds", MultipleShallowed.path({foo_id: 2}))
   end
 
   def test_find_belongs_to
